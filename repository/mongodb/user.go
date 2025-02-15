@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"RestApi-Golang/model"
+	"RestApi-Golang/repository"
 	"context"
 	"fmt"
 	"log/slog"
@@ -15,8 +16,8 @@ type MongoClient struct {
 	Client mongo.Collection
 }
 
-func (c MongoClient) CreateUser(user model.User) (string, error) {
-	result, err := c.Client.InsertOne(context.Background(), user)
+func (c MongoClient) CreateUser(context context.Context, user model.User) (string, error) {
+	result, err := c.Client.InsertOne(context, user)
 	if err != nil {
 		return "", err
 	}
@@ -24,10 +25,10 @@ func (c MongoClient) CreateUser(user model.User) (string, error) {
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (c MongoClient) GetUserByID(id string) (model.User, error) {
+func (c MongoClient) GetUserByID(id string) (*model.User, error) {
 	docId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return model.User{}, fmt.Errorf("invalid ID")
+		return nil, fmt.Errorf("invalid ID")
 	}
 
 	var user model.User
@@ -35,12 +36,12 @@ func (c MongoClient) GetUserByID(id string) (model.User, error) {
 
 	err = c.Client.FindOne(context.Background(), filter).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return model.User{}, fmt.Errorf("record not found")
+		return nil, fmt.Errorf("record not found")
 	} else if err != nil {
-		return model.User{}, err
+		return nil, err
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func (c MongoClient) GetAllUsers() ([]model.User, error) {
@@ -111,4 +112,8 @@ func (c MongoClient) DeleteAllUsers() (int, error) {
 	}
 
 	return int(result.DeletedCount), nil
+}
+
+func New(client mongo.Collection) repository.UserInterface {
+	return MongoClient{Client: client}
 }

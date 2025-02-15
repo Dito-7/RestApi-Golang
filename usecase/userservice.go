@@ -35,7 +35,7 @@ func (srv UserService) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Country: userReq.Country,
 	}
 
-	result, err := srv.DBClient.CreateUser(user)
+	result, err := srv.DBClient.CreateUser(r.Context(), user)
 	if err != nil {
 		slog.Error(err.Error())
 		res.Error = "Failed to create user"
@@ -176,4 +176,8 @@ func (srv UserService) DeleteAllUsers(w http.ResponseWriter, r *http.Request) {
 	res.Data = result
 
 	json.NewEncoder(w).Encode(res)
+}
+
+func New(dbclient repository.UserInterface) UserService {
+	return UserService{DBClient: dbclient}
 }

@@ -51,12 +51,13 @@ func main() {
 	defer mongoClient.Disconnect(context.Background())
 
 	// Mongo Collection
-	collection := mongoClient.Database(os.Getenv("MONGO_DBNAME")).Collection(os.Getenv("MONGO_COLLECTION_NAME"))
+	database := mongoClient.Database(os.Getenv("MONGO_DBNAME"))
+	collection := database.Collection(os.Getenv("MONGO_COLLECTION_NAME"))
+
+	repo := mongodb.New(*collection)
 
 	// UserService instance
-	userService := usecase.UserService{
-		DBClient: mongodb.MongoClient{Client: *collection},
-	}
+	userService := usecase.New(repo)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
